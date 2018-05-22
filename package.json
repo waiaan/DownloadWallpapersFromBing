@@ -1,0 +1,20 @@
+{
+  "name": "downloadwallpapersfrombing",
+  "version": "1.0.0",
+  "description": "Download Wallpapers From cn.bing.com",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "DownloadWallpapersFromBing"
+  },
+  "keywords": [
+    "wallpapers",
+    "bing",
+    "Node.js"
+  ],
+  "author": "",
+  "license": "ISC"
+}
