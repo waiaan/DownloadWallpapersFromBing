@@ -3,7 +3,12 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const url = require("url");
-let hashs = JSON.parse(fs.readFileSync(config.hashsFilePath));
+
+// config中的路径是否存在
+let hashs = fs.existsSync(config.hashsFilePath) ? JSON.parse(fs.readFileSync(config.hashsFilePath)) : {};
+if (!fs.existsSync(config.wallpapersPath)) {
+  fs.mkdirSync(config.wallpapersPath);
+}
 
 // 获取所有链接的图片信息
 (() => {
@@ -23,7 +28,7 @@ let hashs = JSON.parse(fs.readFileSync(config.hashsFilePath));
         data = JSON.parse(data).images[0];
         // 判断已下载过的图片
         if (hashs[data.hsh]) {
-          console.log(getFileName(data.url)+" already exists");
+          console.log(getFileName(data.url) + " already exists");
           return false;
         } else {
           hashs[data.hsh] = {};
@@ -35,7 +40,7 @@ let hashs = JSON.parse(fs.readFileSync(config.hashsFilePath));
         // 异步循环结束
         if (n === arr.length - 1) {
           handleHashs(hashs);
-          // getImageData(imgsData);
+          getImageData(imgsData);
         }
       })
     });
@@ -61,6 +66,7 @@ const getImageData = (data) => {
         data += chunk;
       });
       res.on("end", () => {
+        console.log(fileName + " downloaded");
         n++;
         imgsData[fileName] = data;
         // 异步循环结束
@@ -90,11 +96,11 @@ const getFileName = (url) => {
 
 const handleHashs = (hashs) => {
   // 删除超过数量的文件（待实现）
-  let expiredNum = Object.keys(hashs).length - config.maxFiles;
-  if (expiredNum > 0) {
-    dealExpiredHashs(hashs, expiredNum);
-    delFiles(hashs);
-  }
+  // let expiredNum = Object.keys(hashs).length - config.maxFiles;
+  // if (expiredNum > 0) {
+  //   dealExpiredHashs(hashs, expiredNum);
+  //   delFiles(hashs);
+  // }
   // 
   fs.writeFile(config.hashsFilePath, JSON.stringify(hashs), "utf-8", (err) => {
     if (err) throw new Error(err);
@@ -110,7 +116,7 @@ const dealExpiredHashs = (hashs, n) => {
     console.log(2);
     if (!curr) {
       curr = hashs[hash];
-      console.log(3,curr);
+      console.log(3, curr);
     } else if (hashs[hash].date < curr.date) {
       curr = hashs[hash];
       console.log(curr);
