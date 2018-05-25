@@ -27,20 +27,16 @@ if (!fs.existsSync(config.wallpapersPath)) {
         n++;
         data = JSON.parse(data).images[0];
         // 判断已下载过的图片
-        if (hashs[data.hsh]) {
+        if (data.hsh && hashs[data.hsh]) {
           console.log(getFileName(data.url) + " already exists");
           return false;
         } else {
           hashs[data.hsh] = {};
-          hashs[data.hsh].fileName = getFileName(data.url);
-          hashs[data.hsh].date = new Date().getTime();
-          hashs[data.hsh].copyright = data.copyright;
           imgsData.push(data);
         }
         // 异步循环结束
         if (n === arr.length - 1) {
-          handleHashs(hashs);
-          getImageData(imgsData);
+          getImageData(imgsData, hashs);
         }
       })
     });
@@ -51,7 +47,7 @@ if (!fs.existsSync(config.wallpapersPath)) {
 })();
 
 // 处理得到的图片信息
-const getImageData = (data) => {
+const getImageData = (data, hashs) => {
   // 保存所有图片的数据
   let imgsData = {};
   // 计数器
@@ -69,8 +65,16 @@ const getImageData = (data) => {
         console.log(fileName + " downloaded");
         n++;
         imgsData[fileName] = data;
+        if (!hashs[img.hsh]) {
+          throw new Error("Did not get the image " + fileName);
+        } else {
+          hashs[img.hsh].fileName = getFileName(img.url);
+          hashs[img.hsh].date = new Date().getTime();
+          hashs[img.hsh].copyright = img.copyright;
+        }
         // 异步循环结束
         if (n === images.length - 1) {
+          handleHashs(hashs);
           creatImgFile(imgsData);
         }
       });
