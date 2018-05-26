@@ -29,13 +29,12 @@ if (!fs.existsSync(config.wallpapersPath)) {
         // 判断已下载过的图片
         if (data.hsh && hashs[data.hsh]) {
           console.log(getFileName(data.url) + " already exists");
-          return false;
         } else {
           hashs[data.hsh] = {};
           imgsData.push(data);
         }
         // 异步循环结束
-        if (n === arr.length - 1) {
+        if (n === arr.length) {
           getImageData(imgsData, hashs);
         }
       })
@@ -54,7 +53,7 @@ const getImageData = (data, hashs) => {
   let n = 0;
   data.forEach((img, index, images) => {
     let imgUrl = url.resolve(config.host, img.url);
-    let fileName = getFileName(img.url)
+    let fileName = getFileName(img.url);
     let req = http.get(imgUrl, (res) => {
       let data = "";
       res.setEncoding("binary");
@@ -73,7 +72,7 @@ const getImageData = (data, hashs) => {
           hashs[img.hsh].copyright = img.copyright;
         }
         // 异步循环结束
-        if (n === images.length - 1) {
+        if (n === images.length) {
           handleHashs(hashs);
           creatImgFile(imgsData);
         }
