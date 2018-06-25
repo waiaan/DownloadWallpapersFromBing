@@ -102,6 +102,22 @@ const getFileName = (url) => {
   return arr[arr.length - 1];
 }
 
+// 删除hashs中并不存在文件的值（待实现）
+const delNotExistsValue = (hashs) => {
+  const files = fs.readdirSync(config.wallpapersPath);
+  // console.log(files.length);
+  outer:for (let k in hashs){
+    let fileName = hashs[k].fileName;
+    for (let i = 0, leni = files.length; i < leni;i++){
+      if (files[i]===fileName) {
+        continue outer;
+      }
+    }
+    console.log(fileName);
+  }
+  return hashs;
+}
+
 // 删除超过数量的文件
 const dealExpiredHashs = (hashs, n) => {
   let times = [], expiredTime = [];
@@ -132,6 +148,8 @@ const dealExpiredHashs = (hashs, n) => {
       }
     }
   }
+  // hashs文件中有重复的文件名但不同hash的值（待实现）
+  // hashs = delNotExistsValue(hashs);
   return hashs;
 }
 
