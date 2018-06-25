@@ -3,9 +3,15 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const url = require("url");
-
+let hashs = {};
 // config中的路径是否存在
-let hashs = fs.existsSync(config.hashsFilePath) ? JSON.parse(fs.readFileSync(config.hashsFilePath)) : {};
+if (fs.existsSync(config.hashsFilePath)) {
+  // 在txt文件开始位置莫名其妙出现特殊符号
+  let str = fs.readFileSync(config.hashsFilePath).toString();
+  // str = str.substr(1, str.length);
+  hashs = JSON.parse(str);
+}
+
 if (!fs.existsSync(config.wallpapersPath)) {
   fs.mkdirSync(config.wallpapersPath);
 }
@@ -28,7 +34,7 @@ if (!fs.existsSync(config.wallpapersPath)) {
         data = JSON.parse(data).images[0];
         // 判断已下载过的图片
         if (data.hsh && hashs[data.hsh]) {
-          console.log(getFileName(data.url) + " already exists");
+          console.error(data.copyright + "\nalready exists");
         } else {
           hashs[data.hsh] = {};
           imgsData.push(data);
@@ -52,6 +58,7 @@ const getImageData = (data, hashs) => {
   // 计数器
   let n = 0;
   data.forEach((img, index, images) => {
+    // console.log(img);
     let imgUrl = url.resolve(config.host, img.url);
     let fileName = getFileName(img.url);
     let req = http.get(imgUrl, (res) => {
@@ -61,7 +68,7 @@ const getImageData = (data, hashs) => {
         data += chunk;
       });
       res.on("end", () => {
-        console.log(fileName + " downloaded");
+        console.log(img.copyright + "\ndownloaded");
         n++;
         imgsData[fileName] = data;
         if (!hashs[img.hsh]) {
@@ -73,8 +80,7 @@ const getImageData = (data, hashs) => {
         }
         // 异步循环结束
         if (n === images.length) {
-          handleHashs(hashs);
-          creatImgFile(imgsData);
+          creatImgFile(imgsData,hashs);
         }
       });
     });
@@ -84,12 +90,11 @@ const getImageData = (data, hashs) => {
   })
 }
 
-const creatImgFile = (images) => {
+const creatImgFile = (images,hashs) => {
   for (let fileName in images) {
-    fs.writeFile((path.join(config.wallpapersPath, fileName)), images[fileName], "binary", (err) => {
-      if (err) throw new Error(err);
-    });
+    fs.writeFileSync((path.join(config.wallpapersPath, fileName)), images[fileName], "binary");
   }
+  handleHashs(hashs);
 }
 
 const getFileName = (url) => {
@@ -97,32 +102,55 @@ const getFileName = (url) => {
   return arr[arr.length - 1];
 }
 
+// 删除超过数量的文件
+const dealExpiredHashs = (hashs, n) => {
+  let times = [], expiredTime = [];
+  for (let key in hashs) {
+    times.push(hashs[key].date);
+  }
+  times.sort();
+  // console.log(times);
+  for (let i = 0; i < n; i++) {
+    expiredTime.push(times.shift());
+  }
+  // console.log(expiredTime);
+  for (let key in hashs) {
+    for (let i = 0, leni = expiredTime.length; i < leni; i++) {
+      if (hashs[key].date === expiredTime[i]) {
+        // console.log(hashs[key]);
+        const fileToBeDeledPath = path.join(config.wallpapersPath, hashs[key].fileName);
+        // console.log(fileToBeDeledPath);
+        if (fs.existsSync(fileToBeDeledPath)) {
+          // fs.unlink(fileToBeDeledPath, (err) => {
+          //   if (err) throw new Error(err);
+          // });
+          fs.unlinkSync(fileToBeDeledPath);
+          console.log(hashs[key].copyright + "\nhas been deleted");
+        }
+        delete hashs[key];
+        break;
+      }
+    }
+  }
+  return hashs;
+}
+
 const handleHashs = (hashs) => {
-  // 删除超过数量的文件（待实现）
-  // let expiredNum = Object.keys(hashs).length - config.maxFiles;
-  // if (expiredNum > 0) {
-  //   dealExpiredHashs(hashs, expiredNum);
-  //   delFiles(hashs);
-  // }
-  // 
+  // 判断过期的文件数
+  // console.log(Object.keys(hashs));
+  // const fileNums = fs.readdirSync(config.wallpapersPath).length;
+  // console.log(fileNums);
+  let expiredNum = fs.readdirSync(config.wallpapersPath).length - config.maxFiles;
+  // console.log(expiredNum);
+  if (expiredNum > 0) {
+    hashs=dealExpiredHashs(hashs, expiredNum);
+  }
+  // console.log(hashs);
   fs.writeFile(config.hashsFilePath, JSON.stringify(hashs), "utf-8", (err) => {
     if (err) throw new Error(err);
     console.log("hashs has bee written");
   })
 }
 
-// 删除超过数量的文件（待实现）
-const dealExpiredHashs = (hashs, n) => {
-  let curr = null;
-  console.log(hashs)
-  for (let hash in hashs) {
-    console.log(2);
-    if (!curr) {
-      curr = hashs[hash];
-      console.log(3, curr);
-    } else if (hashs[hash].date < curr.date) {
-      curr = hashs[hash];
-      console.log(curr);
-    }
-  }
-}
+// 测试用
+// handleHashs(hashs);
