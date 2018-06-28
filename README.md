@@ -1,13 +1,22 @@
-# 从bing.com下载图片，需先打开bing.com，得到对应自己分辨率的图片接口，再填入config.js中的url中
+# Download the wallpapers from bing.com.
+## first you should open bing.com,then find out the url that used to get the wallpapers info.
+### It looks like this:
 
-`
+```js
 urls.push("http://cn.bing.com/HPImageArchive.aspx?format=js&idx=" + i + "&n=1&nc=1526806663460&pid=hp");}
-`
+```
+### the "i" stands for the page number,its range is 0 to 10.
 
-# config.js  
-### 本地最大壁纸文件数 
-    maxFiles: 30,
-### 下载的壁纸保存路径
-    wallpapersPath: "H:\\Wallpapers",
-### 用来保存下载信息、判断过期文件（替代数据库）
-    hashsFilePath:"H:\\hashs.txt"
+## Some configs in config.js  
+### Maximum number of the local wallpaper files saved 
+```js
+maxFiles: 30
+```
+### The path of the local wallpaper files saved
+```js
+wallpapersPath: "H:\\Wallpapers"
+```
+### The path of file that saves the datas of the downloaded wallpapers (instead of database)
+```js
+hashsFilePath:"H:\\hashs.txt"
+```

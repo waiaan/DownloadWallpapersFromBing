@@ -113,7 +113,8 @@ const delNotExistsValue = (hashs) => {
         continue outer;
       }
     }
-    console.log(fileName);
+    console.log(fileName + " not exsits");
+    delete hashs[k];
   }
   return hashs;
 }
@@ -149,7 +150,7 @@ const dealExpiredHashs = (hashs, n) => {
     }
   }
   // hashs文件中有重复的文件名但不同hash的值（待实现）
-  // hashs = delNotExistsValue(hashs);
+  hashs = delNotExistsValue(hashs);
   return hashs;
 }
 
