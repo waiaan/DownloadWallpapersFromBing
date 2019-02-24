@@ -16,5 +16,6 @@
     "Node.js"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {}
 }

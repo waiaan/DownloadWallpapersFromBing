@@ -1,5 +1,6 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const config = require("./config");
-const http = require("http");
+const https = require("https");
 const fs = require("fs");
 const path = require("path");
 const url = require("url");
@@ -23,7 +24,7 @@ if (!fs.existsSync(config.wallpapersPath)) {
   // 计数器
   let n = 0;
   config.urls.forEach((url, index, arr) => {
-    let req = http.get(url, (res) => {
+    let req = https.get(url, (res) => {
       let data = "";
       res.setEncoding('utf8');
       res.on("data", (chunk) => {
@@ -61,7 +62,7 @@ const getImageData = (data, hashs) => {
     // console.log(img);
     let imgUrl = url.resolve(config.host, img.url);
     let fileName = getFileName(img.url);
-    let req = http.get(imgUrl, (res) => {
+    let req = https.get(imgUrl, (res) => {
       let data = "";
       res.setEncoding("binary");
       res.on("data", (chunk) => {
