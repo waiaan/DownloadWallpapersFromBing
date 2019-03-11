@@ -61,7 +61,7 @@ const getImageData = (data, hashs) => {
   data.forEach((img, index, images) => {
     // console.log(img);
     let imgUrl = url.resolve(config.host, img.url);
-    let fileName = getFileName(img.url);
+    let fileName = getFileName(img.urlbase);
     let req = https.get(imgUrl, (res) => {
       let data = "";
       res.setEncoding("binary");
@@ -99,8 +99,8 @@ const creatImgFile = (images,hashs) => {
 }
 
 const getFileName = (url) => {
-  let arr = url.split("/");
-  return arr[arr.length - 1];
+  let arr = url.split("=");
+  return arr[arr.length - 1].replace('OHR.','')+'.jpg';
 }
 
 // 删除hashs中并不存在文件的值（待实现）
