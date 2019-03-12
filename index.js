@@ -1,176 +1,103 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-const config = require("./config");
-const https = require("https");
-const fs = require("fs");
-const path = require("path");
-const url = require("url");
-let hashs = {};
-// config中的路径是否存在
-if (fs.existsSync(config.hashsFilePath)) {
-  // 在txt文件开始位置莫名其妙出现特殊符号
-  let str = fs.readFileSync(config.hashsFilePath).toString();
-  // str = str.substr(1, str.length);
-  hashs = JSON.parse(str);
-}
+const {urls,maxFiles,wallpapersPath,host} = require('./config');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
-if (!fs.existsSync(config.wallpapersPath)) {
-  fs.mkdirSync(config.wallpapersPath);
-}
-
-// 获取所有链接的图片信息
-(() => {
-  // 保存所有链接的json数据
-  let imgsData = [];
-  // 计数器
-  let n = 0;
-  config.urls.forEach((url, index, arr) => {
-    let req = https.get(url, (res) => {
-      let data = "";
-      res.setEncoding('utf8');
-      res.on("data", (chunk) => {
+const requestImageUrl = (url,encode) => {
+  return new Promise((resolve,reject) => {
+    https.get(url, (res) => {
+      let data = '';
+      encode && res.setEncoding(encode);
+      res.on('data', (chunk) => {
         data += chunk;
-      })
-      res.on("end", () => {
-        n++;
-        data = JSON.parse(data).images[0];
-        // 判断已下载过的图片
-        if (data.hsh && hashs[data.hsh]) {
-          console.error(data.copyright + "\nalready exists");
-        } else {
-          hashs[data.hsh] = {};
-          imgsData.push(data);
-        }
-        // 异步循环结束
-        if (n === arr.length) {
-          getImageData(imgsData, hashs);
-        }
-      })
-    });
-    req.on("error", (err) => {
-      if (err) throw new Error(err);
+      }).on('error', (e) => {
+        reject(e);
+      }).on('end', () => {
+        resolve(data);
+      });
+    })
+  })
+}
+
+const readDir = (path) => {
+  return new Promise((resolve,reject) => {
+    fs.readdir(path, (err,res) => {
+      if (err) return reject(err);
+      resolve(res);
     })
   });
-})();
+}
 
-// 处理得到的图片信息
-const getImageData = (data, hashs) => {
-  // 保存所有图片的数据
-  let imgsData = {};
-  // 计数器
-  let n = 0;
-  data.forEach((img, index, images) => {
-    // console.log(img);
-    let imgUrl = url.resolve(config.host, img.url);
-    let fileName = getFileName(img.urlbase);
-    let req = https.get(imgUrl, (res) => {
-      let data = "";
-      res.setEncoding("binary");
-      res.on("data", (chunk) => {
-        data += chunk;
-      });
-      res.on("end", () => {
-        console.log(img.copyright + "\ndownloaded");
-        n++;
-        imgsData[fileName] = data;
-        if (!hashs[img.hsh]) {
-          throw new Error("Did not get the image " + fileName);
-        } else {
-          hashs[img.hsh].fileName = getFileName(img.url);
-          hashs[img.hsh].date = new Date().getTime();
-          hashs[img.hsh].copyright = img.copyright;
-        }
-        // 异步循环结束
-        if (n === images.length) {
-          creatImgFile(imgsData,hashs);
-        }
-      });
+const createFile = (path,data) => {
+  return new Promise((resolve,reject) => {
+    fs.writeFile(path, data, "binary", (err) => {
+      if (err) return reject(err);
+      let fileNameArr = path.split('\\');
+      console.log(fileNameArr);
+      let fileName = fileNameArr[fileNameArr.length - 1];
+      resolve(fileName+' has been saved!');
     });
-    req.on("error", (err) => {
-      if (err) throw new Error(err);
-    })
-  })
+  });
 }
 
-const creatImgFile = (images,hashs) => {
-  for (let fileName in images) {
-    fs.writeFileSync((path.join(config.wallpapersPath, fileName)), images[fileName], "binary");
-  }
-  handleHashs(hashs);
+const getFileStat = (path) => {
+  return new Promise((resolve, reject) => {
+    fs.stat(path, (err,stat) => {
+      if (err) return reject(err);
+      resolve(stat);
+    });
+  });
 }
 
-const getFileName = (url) => {
-  let arr = url.split("=");
-  return arr[arr.length - 1].replace('OHR.','')+'.jpg';
-}
-
-// 删除hashs中并不存在文件的值（待实现）
-const delNotExistsValue = (hashs) => {
-  const files = fs.readdirSync(config.wallpapersPath);
-  // console.log(files.length);
-  outer:for (let k in hashs){
-    let fileName = hashs[k].fileName;
-    for (let i = 0, leni = files.length; i < leni;i++){
-      if (files[i]===fileName) {
-        continue outer;
+const getCertainMin = (arr,n) => {
+  let tmpArr = [];
+  for (let j = 1; j <= n;j++){
+    let min = 0;
+    for (let i = 1, len = arr.length; i < len; i++) {
+      if (arr[i] < arr[min]) {
+        min = i;
       }
     }
-    console.log(fileName + " not exsits");
-    delete hashs[k];
+    tmpArr=tmpArr.concat(arr.splice(min, 1));
   }
-  return hashs;
+  return tmpArr;
 }
 
-// 删除超过数量的文件
-const dealExpiredHashs = (hashs, n) => {
-  let times = [], expiredTime = [];
-  for (let key in hashs) {
-    times.push(hashs[key].date);
+(async () => {
+  let dirContent = await readDir(wallpapersPath);
+  let existFiles = {};
+  for (let i = 0, len = dirContent.length; i < len;i++){
+    existFiles[dirContent[i]] = true;
   }
-  times.sort();
-  // console.log(times);
-  for (let i = 0; i < n; i++) {
-    expiredTime.push(times.shift());
+  for (let i = 0, len = urls.length; i < len;i++){
+    let imageData = await requestImageUrl(urls[i]);
+    typeof imageData === 'string' && (imageData = JSON.parse(imageData).images[0]);
+    let fileName = imageData.copyright.split('(')[0].trim() + '.jpg';
+    if (existFiles[fileName]) {
+      console.log(fileName + ' exists');
+      continue;
+    }
+    let image = await requestImageUrl(host + imageData.url.slice(0), "binary");
+    let imagePath = path.join(wallpapersPath, fileName );
+    let writeRes = await createFile(imagePath, image);
+    console.log(writeRes);
   }
-  // console.log(expiredTime);
-  for (let key in hashs) {
-    for (let i = 0, leni = expiredTime.length; i < leni; i++) {
-      if (hashs[key].date === expiredTime[i]) {
-        // console.log(hashs[key]);
-        const fileToBeDeledPath = path.join(config.wallpapersPath, hashs[key].fileName);
-        // console.log(fileToBeDeledPath);
-        if (fs.existsSync(fileToBeDeledPath)) {
-          // fs.unlink(fileToBeDeledPath, (err) => {
-          //   if (err) throw new Error(err);
-          // });
-          fs.unlinkSync(fileToBeDeledPath);
-          console.log(hashs[key].copyright + "\nhas been deleted");
-        }
-        delete hashs[key];
-        break;
-      }
+  dirContent = await readDir(wallpapersPath);
+  const delFileCount = dirContent.length - maxFiles;
+  if (delFileCount>0) {
+    let fileCtimes = [];
+    for (let i = 0, len = dirContent.length; i < len; i++) {
+      let fileStat = await getFileStat(path.join(wallpapersPath, dirContent[i]));
+      fileCtimes.push(fileStat.ctimeMs);
+    }
+    const minFileIdxs = getCertainMin(fileCtimes, dirContent.length - delFileCount);
+    for (let i = 0, len = minFileIdxs.length; i < len;i++){
+      let fileName = dirContent[minFileIdxs[i]];
+      let filePath = path.join(wallpapersPath, fileName);
+      fs.unlink(filePath, () => {
+        if (err) throw err;
+        console.log(fileName+' was deleted');
+      })
     }
   }
-  // hashs文件中有重复的文件名但不同hash的值（待实现）
-  hashs = delNotExistsValue(hashs);
-  return hashs;
-}
-
-const handleHashs = (hashs) => {
-  // 判断过期的文件数
-  // console.log(Object.keys(hashs));
-  // const fileNums = fs.readdirSync(config.wallpapersPath).length;
-  // console.log(fileNums);
-  let expiredNum = fs.readdirSync(config.wallpapersPath).length - config.maxFiles;
-  // console.log(expiredNum);
-  if (expiredNum > 0) {
-    hashs=dealExpiredHashs(hashs, expiredNum);
-  }
-  // console.log(hashs);
-  fs.writeFile(config.hashsFilePath, JSON.stringify(hashs), "utf-8", (err) => {
-    if (err) throw new Error(err);
-    console.log("hashs has bee written");
-  })
-}
-
-// 测试用
-// handleHashs(hashs);
+})();
