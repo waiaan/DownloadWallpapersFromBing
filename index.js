@@ -33,7 +33,6 @@ const createFile = (path,data) => {
     fs.writeFile(path, data, "binary", (err) => {
       if (err) return reject(err);
       let fileNameArr = path.split('\\');
-      console.log(fileNameArr);
       let fileName = fileNameArr[fileNameArr.length - 1];
       resolve(fileName+' has been saved!');
     });
