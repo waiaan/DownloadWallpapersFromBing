@@ -64,8 +64,9 @@ const getCertainMin = (arr,n) => {
 
 (async () => {
   let dirContent = await readDir(wallpapersPath);
+  let fileNums = dirContent.length;
   let existFiles = {};
-  for (let i = 0, len = dirContent.length; i < len;i++){
+  for (let i = 0; i < fileNums;i++){
     existFiles[dirContent[i]] = true;
   }
   for (let i = 0, len = urls.length; i < len;i++){
@@ -80,9 +81,9 @@ const getCertainMin = (arr,n) => {
     let imagePath = path.join(wallpapersPath, fileName );
     let writeRes = await createFile(imagePath, image);
     console.log(writeRes);
+    fileNums++;
   }
-  dirContent = await readDir(wallpapersPath);
-  const delFileCount = dirContent.length - maxFiles;
+  const delFileCount = fileNums - maxFiles;
   if (delFileCount>0) {
     let fileCtimes = [];
     for (let i = 0, len = dirContent.length; i < len; i++) {
