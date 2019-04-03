@@ -16,7 +16,3 @@ maxFiles: 30
 ```js
 wallpapersPath: "H:\\Wallpapers"
 ```
-### The path of file that saves the datas of the downloaded wallpapers (instead of database)
-```js
-hashsFilePath:"H:\\hashs.txt"
-```
