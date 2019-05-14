@@ -6,7 +6,6 @@ const config = {
   host: "https://cn.bing.com/",
   urls: urls,
   maxFiles: 30,
-  wallpapersPath: "H:\\softwares\\Wallpapers",
-  hashsFilePath: "H:\\softwares\\hashs.txt"
+  wallpapersPath: "H:\\softwares\\Wallpapers"
 }
 module.exports = config;
