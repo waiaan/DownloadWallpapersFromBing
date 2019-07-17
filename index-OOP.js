@@ -104,8 +104,10 @@ class DownloadWallpapersFromBing {
     for (let i = 0, len = urls.length; i < len; i++) {
       let res = null;
       try {
+        console.log('fetching ' + urls[i])
         res = await requestImageUrl(urls[i]);
       } catch (error) {
+        console.log('fetching error ' + urls[i])
         throw new Error(error);
       }
       res = typeof res === 'string' && JSON.parse(res);
