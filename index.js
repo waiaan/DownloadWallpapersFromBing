@@ -73,7 +73,7 @@ const getCertainMin = (arr, n) => {
   for (let i = 0, len = urls.length; i < len; i++) {
     let imageData = await requestImageUrl(urls[i]);
     typeof imageData === 'string' && (imageData = JSON.parse(imageData).images[0]);
-    let fileName = (imageData.copyright.split('(')[0].trim() + '.jpg').replace('/', '&&');
+    let fileName = (imageData.copyright.split('(')[0].trim() + '.jpg').replace('/', '&&').replace(/\"/g, '”');
     if (existFiles[fileName]) {
       console.log(fileName + ' exists');
       continue;

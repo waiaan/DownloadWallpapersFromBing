@@ -87,7 +87,7 @@ class DownloadWallpapersFromBing {
   }
 
   async generateImageFile(info) {
-    let fileName = (info.copyright.split('(')[0].trim() + '.jpg').replace('/', '&&');
+    let fileName = (info.copyright.split('(')[0].trim() + '.jpg').replace('/', '&&').replace(/\"/g, '”');
     if (this.existFiles[fileName]) {
       console.log(fileName + ' exists');
       return;
